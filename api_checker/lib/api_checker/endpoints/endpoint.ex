@@ -2,6 +2,8 @@ defmodule ApiChecker.Endpoints.Endpoint do
   use Ecto.Schema
   import Ecto.Changeset
 
+  require Logger
+
   schema "endpoints" do
     field :active, :boolean, default: false
     field :name, :string
@@ -10,13 +12,19 @@ defmodule ApiChecker.Endpoints.Endpoint do
     field :notification_email, :string
     field :notification_slack_webhook, :string
 
+    belongs_to :user, ApiChecker.Accounts.User
+
+    has_many :check_results, ApiChecker.Endpoints.CheckResult
     timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(endpoint, attrs) do
-    endpoint
-    |> cast(attrs, [:url, :check_interval_seconds, :active, :name, :notification_email, :notification_slack_webhook])
+    changeset =
+      endpoint
+      |> cast(attrs, [:url, :check_interval_seconds, :active, :name, :notification_email, :notification_slack_webhook, :user_id])
+
+    changeset
     |> validate_required([:url, :check_interval_seconds, :active, :name])
   end
 end
