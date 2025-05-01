@@ -7,11 +7,10 @@ defmodule ApiChecker.Accounts.User do
     field :email, :string
     field :hashed_password, :string
     field :confirmed_at, :naive_datetime
-
     field :password, :string, virtual: true
+    field :token, :string
 
-    # Optional: Add a has_many association to endpoints later
-    # has_many :endpoints, ApiChecker.Endpoints.Endpoint
+    has_many :endpoints, ApiChecker.Endpoints.Endpoint
 
     timestamps()
   end
