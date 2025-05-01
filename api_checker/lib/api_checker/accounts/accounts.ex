@@ -10,10 +10,6 @@ defmodule ApiChecker.Accounts do
 
   @doc """
   Creates a new user.
-
-  Accepts a map of user attributes.
-  Returns `{:ok, user}` if the user was created successfully,
-  or `{:error, changeset}` otherwise.
   """
   def create_user(attrs \\ %{}) do
     %User{}
@@ -23,25 +19,15 @@ defmodule ApiChecker.Accounts do
 
   @doc """
   Authenticates a user by email and password.
-
-  Returns `{:ok, user}` if authentication is successful,
-  or `{:error, :unauthorized}` otherwise.
   """
   def authenticate_user(email, password) do
     user = Repo.get_by(User, email: email)
 
     case user do
       %User{hashed_password: hashed_password} when not is_nil(hashed_password) ->
-        # Use Bcrypt.checkpw to verify the password
-        if Bcrypt.checkpw(password, hashed_password) do
-          # Optional: Check if the user is confirmed
-          # if user.confirmed_at do
+        if Bcrypt.check_pass(password, hashed_password) do
             Logger.info("User authenticated successfully: #{email}")
             {:ok, user}
-          # else
-          #   Logger.warning("Authentication failed for user (not confirmed): #{email}")
-          #   {:error, :not_confirmed} # You can define different error atoms
-          # end
         else
           Logger.warning("Authentication failed for user (invalid password): #{email}")
           {:error, :unauthorized}
@@ -60,8 +46,29 @@ defmodule ApiChecker.Accounts do
     Repo.get_by(User, email: email)
   end
 
-  # You can add other functions here as needed, e.g.:
-  # def update_user(user, attrs) do ... end
-  # def delete_user(user) do ... end
-  # def confirm_user(user) do ... end
+  """
+  Token generation
+  """
+  def login_user(email, password) do
+    case authenticate_user(email, password) do
+        {:ok, user} ->
+          token = :crypto.strong_rand_bytes(32) |> Base.url_encode64() |> binary_part(0, 32)
+          changeset = Ecto.Changeset.change(user, token: token)
+          case Repo.update(changeset) do
+            {:ok, user} -> {:ok, token, user}
+            error -> error
+          end
+        error -> error
+      end
+    end
+
+    def get_user_by_token(token) do
+      # Ensure token is not nil or empty before querying
+      if token && token != "" do
+        Repo.get_by(User, token: token)
+      else
+        nil
+      end
+    end
+
 end
