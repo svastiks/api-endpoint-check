@@ -54,7 +54,8 @@ defmodule ApiChecker.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       {:finch, "~> 0.17"},
-      {:bcrypt_elixir, "~> 3.0"}
+      {:bcrypt_elixir, "~> 3.0"},
+      {:cors_plug, "~> 1.5"}
     ]
   end
 
