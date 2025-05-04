@@ -1,14 +1,9 @@
-import React, { useState, FormEvent } from "react";
-import axios from "axios";
-
-// Expected API response on successful login
-interface LoginResponse {
-  token: string;
-  user_id: number;
-  email: string;
-}
+import React, { useState, useContext, FormEvent } from "react";
+import api from "../api/axios";
+import { AuthContext } from "../context/AuthContext";
 
 const Login: React.FC = () => {
+  const { setToken } = useContext(AuthContext);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -21,31 +16,12 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post<LoginResponse>(
-        "http://localhost:4000/api/login",
-        {
-          email: email,
-          password: password,
-        }
-      );
-
-      console.log("Login successful:", response.data);
+      const response = await api.post("/login", {email, password});
       const { token } = response.data;
+      setToken(token);
 
-      alert(`Login successful! Token: ${token}`);
-    } catch (err) {
-
-      console.error("Login error:", err);
-      let errorMessage = "Login failed. Please check your credentials.";
-
-      if (axios.isAxiosError(err) && err.response) {
-        if (err.response.data && err.response.data.error) {
-          errorMessage = err.response.data.error;
-        } else if (err.response.status === 401) {
-          errorMessage = "Invalid email or password.";
-        }
-      }
-      setError(errorMessage);
+    } catch (err: any) {
+      setError("Login failed. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
