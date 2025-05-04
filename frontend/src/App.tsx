@@ -1,19 +1,17 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
 } from "react-router-dom"
-
-import './App.css';
-
 import LoginPage from "./pages/LoginPage"
-import Login from './components/Login';
+import { AuthContext } from './context/AuthContext';
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
 
-  const isAuthenticated = false;
+  const { isAuthenticated } = useContext(AuthContext);
 
   return (
   <Router>
@@ -47,7 +45,7 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            isAuthenticated ? <div>Dashboard Placeholder</div> /* <DashboardPage /> */ : <Navigate to="/login" />
+            isAuthenticated ? <DashboardPage/> /* <DashboardPage /> */ : <Navigate to="/login" />
           }
         />
         {/* 404 Not Found */}
