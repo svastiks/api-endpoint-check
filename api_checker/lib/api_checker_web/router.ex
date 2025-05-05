@@ -14,6 +14,7 @@ defmodule ApiCheckerWeb.Router do
     pipe_through [:api, ApiCheckerWeb.AuthPlug]
 
     resources "/endpoints", EndpointController, except: [:new, :edit]
+    get "/check_results/:endpoint_id", CheckResultController, :index
   end
 
   # Scope for Unprotected API routes

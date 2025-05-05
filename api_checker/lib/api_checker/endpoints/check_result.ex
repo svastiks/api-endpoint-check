@@ -1,7 +1,18 @@
-# lib/api_checker/endpoints/check_result.ex
 defmodule ApiChecker.Endpoints.CheckResult do
   use Ecto.Schema
   import Ecto.Changeset
+
+  @derive {Jason.Encoder, only: [
+    :id,
+    :status_code,
+    :response_time_ms,
+    :success,
+    :error_message,
+    :checked_at,
+    :endpoint_id,
+    :inserted_at,
+    :updated_at
+  ]}
 
   schema "check_results" do
     field :status_code, :integer

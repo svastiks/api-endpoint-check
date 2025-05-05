@@ -1,4 +1,5 @@
 import React, { useContext } from "react";
+import EndpointList from "../components/EndpointList";
 import { AuthContext } from "../context/AuthContext";
 
 const DashboardPage: React.FC = () => {
@@ -20,7 +21,9 @@ const DashboardPage: React.FC = () => {
           Logout
         </button>
       </header>
-      {}
+      <main style={{ maxWidth: 700, margin: "2rem auto" }}>
+        <EndpointList />
+      </main>
     </div>
   );
 };

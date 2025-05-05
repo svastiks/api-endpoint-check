@@ -1,3 +1,4 @@
+import { CheckResult } from "../types/endpoint";
 import axios from "axios";
 
 const api = axios.create({

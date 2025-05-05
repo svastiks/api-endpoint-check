@@ -82,4 +82,17 @@ defmodule ApiChecker.Endpoints do
   def get_user_endpoint(%User{} = user, id) do
      Repo.get_by(Endpoint, id: id, user_id: user.id)
   end
+
+  @doc """
+  Returns a list of all results for that endpoint
+  """
+  def list_check_results_for_endpoint(endpoint_id, limit \\ 10) do
+    import Ecto.Query
+    ApiChecker.Repo.all(
+      from cr in ApiChecker.Endpoints.CheckResult,
+        where: cr.endpoint_id == ^endpoint_id,
+        order_by: [desc: cr.checked_at],
+        limit: ^limit
+    )
+  end
 end
