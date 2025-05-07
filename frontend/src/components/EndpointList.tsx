@@ -5,10 +5,12 @@ import { CheckResult } from "../types/endpoint";
 import { fetchLatestCheckResult } from "../api/endpoints";
 
 const EndpointList: React.FC = () => {
-  const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [latestResults, setLatestResults] = useState<Record<number, CheckResult | null>>({});
+const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
+const [loading, setLoading] = useState<boolean>(true);
+const [error, setError] = useState<string | null>(null);
+const [latestResults, setLatestResults] = useState<Record<number, CheckResult | null>>({});
+const [expandedId, setExpandedId] = useState<number | null>(null);
+const [history, setHistory] = useState<Record<number, CheckResult[]>>({});
 
   useEffect(() => {
     const fetchEndpoints = async () => {
@@ -39,6 +41,21 @@ const EndpointList: React.FC = () => {
 
     fetchAllLatest();
   }, [endpoints]);
+
+  useEffect(() => {
+    if (expandedId === null) return;
+  
+    const fetchHistory = async () => {
+      try {
+        const response = await api.get<{ data: CheckResult[] }>(`/check_results/${expandedId}`);
+        setHistory((prev) => ({ ...prev, [expandedId]: response.data.data }));
+      } catch {
+        setHistory((prev) => ({ ...prev, [expandedId]: [] }));
+      }
+    };
+  
+    fetchHistory();
+  }, [expandedId]);  
 
   if (loading) return <div>Loading endpoints...</div>;
   if (error) return <div style={{ color: "red" }}>{error}</div>;
@@ -110,8 +127,60 @@ const EndpointList: React.FC = () => {
                   ? new Date(latest.checked_at).toLocaleString()
                   : "—"}
               </div>
+              <button
+                style={{ marginTop: "0.5em" }}
+                onClick={() => setExpandedId(expandedId === ep.id ? null : ep.id)}
+            >
+                {expandedId === ep.id ? "Hide History" : "Show History"}
+            </button>
+            {expandedId === ep.id && (
+                <div
+                    style={{
+                    marginTop: "1em",
+                    background: "#fff",
+                    border: "1px solid #ddd",
+                    borderRadius: 8,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                    padding: "1em",
+                    maxHeight: 250, // px
+                    overflowY: "auto",
+                    transition: "max-height 0.3s",
+                    }}
+                >
+                    <h4 style={{ margin: "0 0 0.5em 0" }}>Check History</h4>
+                    {history[ep.id] && history[ep.id].length > 0 ? (
+                    <ul style={{ fontSize: "0.95em", paddingLeft: 0, margin: 0 }}>
+                        {history[ep.id].map((check) => (
+                        <li
+                            key={check.id}
+                            style={{
+                            marginBottom: 8,
+                            borderBottom: "1px solid #eee",
+                            paddingBottom: 4,
+                            listStyle: "none",
+                            }}
+                        >
+                            <span>
+                            <strong>Status:</strong> {check.status_code}
+                            </span>
+                            {" | "}
+                            <span>
+                            <strong>Response:</strong> {check.response_time_ms}ms
+                            </span>
+                            {" | "}
+                            <span>
+                            <strong>Checked:</strong> {new Date(check.checked_at).toLocaleString()}
+                            </span>
+                        </li>
+                        ))}
+                    </ul>
+                    ) : (
+                    <div>No history found.</div>
+                    )}
+                </div>
+                )}
             </li>
-          );
+        );
         })}
       </ul>
     </div>
