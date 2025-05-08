@@ -1,9 +1,16 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import EndpointList from "../components/EndpointList";
+import AddEndpointForm from "../components/AddEndpointForm";
 import { AuthContext } from "../context/AuthContext";
+import { Endpoint } from "../types/endpoint";
 
 const DashboardPage: React.FC = () => {
   const { logout } = useContext(AuthContext);
+  const [refresh, setRefresh] = useState(0);
+
+  const handleAddSuccess = (endpoint: Endpoint) => {
+    setRefresh(r => r + 1); // Triggers EndpointList to reload
+  };
 
   return (
     <div>
@@ -22,6 +29,7 @@ const DashboardPage: React.FC = () => {
         </button>
       </header>
       <main style={{ maxWidth: 700, margin: "2rem auto" }}>
+        <AddEndpointForm onSuccess={handleAddSuccess} />
         <EndpointList />
       </main>
     </div>
