@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/axios";
-import { Endpoint } from "../types/endpoint";
-import { CheckResult } from "../types/endpoint";
+import { Endpoint, CheckResult } from "../types/endpoint";
 import { fetchLatestCheckResult } from "../api/endpoints";
 
 const EndpointList: React.FC = () => {
-const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
-const [loading, setLoading] = useState<boolean>(true);
-const [error, setError] = useState<string | null>(null);
-const [latestResults, setLatestResults] = useState<Record<number, CheckResult | null>>({});
-const [expandedId, setExpandedId] = useState<number | null>(null);
-const [history, setHistory] = useState<Record<number, CheckResult[]>>({});
+  const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [latestResults, setLatestResults] = useState<Record<number, CheckResult | null>>({});
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [history, setHistory] = useState<Record<number, CheckResult[]>>({});
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Endpoint>>({});
 
   useEffect(() => {
     const fetchEndpoints = async () => {
@@ -24,13 +25,11 @@ const [history, setHistory] = useState<Record<number, CheckResult[]>>({});
         setLoading(false);
       }
     };
-
     fetchEndpoints();
   }, []);
 
   useEffect(() => {
     if (endpoints.length === 0) return;
-
     const fetchAllLatest = async () => {
       const results: Record<number, CheckResult | null> = {};
       for (const ep of endpoints) {
@@ -38,13 +37,11 @@ const [history, setHistory] = useState<Record<number, CheckResult[]>>({});
       }
       setLatestResults(results);
     };
-
     fetchAllLatest();
   }, [endpoints]);
 
   useEffect(() => {
     if (expandedId === null) return;
-  
     const fetchHistory = async () => {
       try {
         const response = await api.get<{ data: CheckResult[] }>(`/check_results/${expandedId}`);
@@ -53,9 +50,33 @@ const [history, setHistory] = useState<Record<number, CheckResult[]>>({});
         setHistory((prev) => ({ ...prev, [expandedId]: [] }));
       }
     };
-  
     fetchHistory();
-  }, [expandedId]);  
+  }, [expandedId]);
+
+  const handleEditSubmit = async (e: React.FormEvent, id: number) => {
+    e.preventDefault();
+    try {
+      await api.put(`/endpoints/${id}`, { endpoint: editForm });
+      setEditingId(null);
+      setEditForm({});
+      // Refresh the list
+      setEndpoints((prev) =>
+        prev.map((ep) => (ep.id === id ? { ...ep, ...editForm } : ep))
+      );
+    } catch {
+      alert("Failed to update endpoint.");
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this endpoint?")) return;
+    try {
+      await api.delete(`/endpoints/${id}`);
+      setEndpoints((prev) => prev.filter((ep) => ep.id !== id));
+    } catch {
+      alert("Failed to delete endpoint.");
+    }
+  };
 
   if (loading) return <div>Loading endpoints...</div>;
   if (error) return <div style={{ color: "red" }}>{error}</div>;
@@ -127,60 +148,128 @@ const [history, setHistory] = useState<Record<number, CheckResult[]>>({});
                   ? new Date(latest.checked_at).toLocaleString()
                   : "—"}
               </div>
-              <button
-                style={{ marginTop: "0.5em" }}
-                onClick={() => setExpandedId(expandedId === ep.id ? null : ep.id)}
-            >
-                {expandedId === ep.id ? "Hide History" : "Show History"}
-            </button>
-            {expandedId === ep.id && (
-                <div
-                    style={{
-                    marginTop: "1em",
-                    background: "#fff",
-                    border: "1px solid #ddd",
-                    borderRadius: 8,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                    padding: "1em",
-                    maxHeight: 250, // px
-                    overflowY: "auto",
-                    transition: "max-height 0.3s",
-                    }}
+              <div style={{ marginTop: "0.5em", display: "flex", gap: "1em" }}>
+                <button onClick={() => {
+                  setEditingId(ep.id);
+                  setEditForm(ep);
+                }}>
+                  Edit
+                </button>
+                <button
+                  style={{
+                    color: "#fff",
+                    background: "#f44336",
+                    border: "none",
+                    borderRadius: 4,
+                    padding: "0.3em 0.7em"
+                  }}
+                  onClick={() => handleDelete(ep.id)}
                 >
-                    <h4 style={{ margin: "0 0 0.5em 0" }}>Check History</h4>
-                    {history[ep.id] && history[ep.id].length > 0 ? (
-                    <ul style={{ fontSize: "0.95em", paddingLeft: 0, margin: 0 }}>
-                        {history[ep.id].map((check) => (
-                        <li
-                            key={check.id}
-                            style={{
-                            marginBottom: 8,
-                            borderBottom: "1px solid #eee",
-                            paddingBottom: 4,
-                            listStyle: "none",
-                            }}
-                        >
-                            <span>
-                            <strong>Status:</strong> {check.status_code}
-                            </span>
-                            {" | "}
-                            <span>
-                            <strong>Response:</strong> {check.response_time_ms}ms
-                            </span>
-                            {" | "}
-                            <span>
-                            <strong>Checked:</strong> {new Date(check.checked_at).toLocaleString()}
-                            </span>
+                  Delete
+                </button>
+                <button
+                  style={{ marginLeft: "auto" }}
+                  onClick={() => setExpandedId(expandedId === ep.id ? null : ep.id)}
+                >
+                  {expandedId === ep.id ? "Hide History" : "Show History"}
+                </button>
+              </div>
+              {editingId === ep.id && (
+                <form
+                  style={{
+                    marginTop: "1em",
+                    background: "#f9f9f9",
+                    padding: "1em",
+                    borderRadius: 6
+                  }}
+                  onSubmit={e => handleEditSubmit(e, ep.id)}
+                >
+                  <div>
+                    <label>
+                      Name:{" "}
+                      <input
+                        value={editForm.name ?? ep.name}
+                        onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                      />
+                    </label>
+                  </div>
+                  <div>
+                    <label>
+                      URL:{" "}
+                      <input
+                        value={editForm.url ?? ep.url}
+                        onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))}
+                      />
+                    </label>
+                  </div>
+                  <div>
+                    <label>
+                      Check Interval (seconds):{" "}
+                      <input
+                        type="number"
+                        value={editForm.check_interval_seconds ?? ep.check_interval_seconds}
+                        onChange={e => setEditForm(f => ({ ...f, check_interval_seconds: Number(e.target.value) }))}
+                      />
+                    </label>
+                  </div>
+                  <div>
+                    <label>
+                      Notification Email:{" "}
+                      <input
+                        value={editForm.notification_email ?? ep.notification_email ?? ""}
+                        onChange={e => setEditForm(f => ({ ...f, notification_email: e.target.value }))}
+                      />
+                    </label>
+                  </div>
+                  <div>
+                    <label>
+                      Active:{" "}
+                      <input
+                        type="checkbox"
+                        checked={editForm.active ?? ep.active}
+                        onChange={e => setEditForm(f => ({ ...f, active: e.target.checked }))}
+                      />
+                    </label>
+                  </div>
+                  <button type="submit">Save</button>
+                  <button type="button" onClick={() => setEditingId(null)} style={{ marginLeft: "1em" }}>
+                    Cancel
+                  </button>
+                </form>
+              )}
+              {expandedId === ep.id && (
+                <div
+                  style={{
+                    marginTop: "1em",
+                    background: "#f5f5f5",
+                    borderRadius: 6,
+                    padding: "0.5em",
+                    maxHeight: 250,
+                    overflowY: "auto",
+                  }}
+                >
+                  <h4 style={{ margin: "0 0 0.5em 0" }}>Check History</h4>
+                  {history[ep.id] && history[ep.id].length > 0 ? (
+                    <ul style={{ fontSize: "0.95em", paddingLeft: 0 }}>
+                      {history[ep.id].map((check) => (
+                        <li key={check.id} style={{ marginBottom: 4 }}>
+                          <span>Status: {check.status_code}</span>
+                          {" | "}
+                          <span>Response: {check.response_time_ms}ms</span>
+                          {" | "}
+                          <span>
+                            Checked: {new Date(check.checked_at).toLocaleString()}
+                          </span>
                         </li>
-                        ))}
+                      ))}
                     </ul>
-                    ) : (
+                  ) : (
                     <div>No history found.</div>
-                    )}
+                  )}
                 </div>
-                )}
+              )}
             </li>
-        );
+          );
         })}
       </ul>
     </div>

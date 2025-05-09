@@ -95,4 +95,9 @@ defmodule ApiChecker.Endpoints do
         limit: ^limit
     )
   end
+
+  def get_endpoint!(id) do
+    Repo.get!(Endpoint, id)
+  end
+
 end

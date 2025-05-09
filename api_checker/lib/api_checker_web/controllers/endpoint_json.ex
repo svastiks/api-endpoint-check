@@ -26,4 +26,12 @@ defmodule ApiCheckerWeb.EndpointJSON do
       notification_slack_webhook: endpoint.notification_slack_webhook
     }
   end
+
+  def show(%{endpoint: endpoint}) do
+    %{data: endpoint}
+  end
+
+  def index(%{endpoints: endpoints}) do
+    %{data: endpoints}
+  end
 end
