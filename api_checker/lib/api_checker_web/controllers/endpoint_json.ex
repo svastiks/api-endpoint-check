@@ -23,15 +23,9 @@ defmodule ApiCheckerWeb.EndpointJSON do
       active: endpoint.active,
       name: endpoint.name,
       notification_email: endpoint.notification_email,
-      notification_slack_webhook: endpoint.notification_slack_webhook
+      notification_slack_webhook: endpoint.notification_slack_webhook,
+      inserted_at: endpoint.inserted_at,
+      updated_at: endpoint.updated_at
     }
-  end
-
-  def show(%{endpoint: endpoint}) do
-    %{data: endpoint}
-  end
-
-  def index(%{endpoints: endpoints}) do
-    %{data: endpoints}
   end
 end

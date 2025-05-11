@@ -52,7 +52,7 @@ defmodule ApiCheckerWeb.EndpointController do
       GenServer.cast(ApiChecker.CheckerSupervisor, {:endpoint_updated, updated_endpoint})
 
       conn
-      |> render(conn, :show, endpoint: endpoint)
+      |> render(:show, endpoint: endpoint)
     end
   end
 
