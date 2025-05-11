@@ -8,6 +8,7 @@ import {
 import LoginPage from "./pages/LoginPage"
 import { AuthContext } from './context/AuthContext';
 import DashboardPage from './pages/DashboardPage';
+import RegisterPage from "./pages/RegisterPage";
 
 function App() {
 
@@ -38,7 +39,7 @@ function App() {
         <Route
           path="/register"
           element={
-            isAuthenticated ? <Navigate to="/dashboard" /> : <div>Register Page Placeholder</div> /* <RegisterPage /> */
+            isAuthenticated ? <Navigate to="/dashboard" /> :  <RegisterPage />
           }
         />
         {/* Dashboard Route (Protected) */}

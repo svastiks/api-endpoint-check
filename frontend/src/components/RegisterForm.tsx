@@ -6,6 +6,7 @@ const RegisterForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -13,11 +14,12 @@ const RegisterForm: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(false);
 
     try {
       await api.post("/register", { email, password });
-      // Optionally show a success message here
-      navigate("/login");
+      setSuccess(true);
+      setTimeout(() => navigate("/login"), 1500);
     } catch (err: any) {
       setError("Registration failed. Email may already be taken.");
     } finally {
