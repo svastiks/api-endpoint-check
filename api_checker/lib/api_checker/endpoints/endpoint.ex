@@ -25,6 +25,6 @@ defmodule ApiChecker.Endpoints.Endpoint do
       |> cast(attrs, [:url, :check_interval_seconds, :active, :name, :notification_email, :notification_slack_webhook, :user_id])
 
     changeset
-    |> validate_required([:url, :check_interval_seconds, :active, :name])
+    |> validate_required([:url, :check_interval_seconds, :active, :name, :user_id])
   end
 end

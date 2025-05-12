@@ -17,11 +17,14 @@ const RegisterForm: React.FC = () => {
     setSuccess(false);
 
     try {
-      await api.post("/register", { email, password });
+      await api.post("/register", { user: { email, password } });
       setSuccess(true);
       setTimeout(() => navigate("/login"), 1500);
     } catch (err: any) {
-      setError("Registration failed. Email may already be taken.");
+      console.error("Registration error:", err);
+      setError(err.response?.data?.errors ? 
+        Object.values(err.response.data.errors).join(", ") : 
+        "Registration failed. Email may already be taken.");
     } finally {
       setLoading(false);
     }
@@ -30,6 +33,7 @@ const RegisterForm: React.FC = () => {
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 400 }}>
       {error && <div style={{ color: "red" }}>{error}</div>}
+      {success && <div style={{ color: "green" }}>Registration successful! Redirecting to login...</div>}
       <div>
         <label>
           Email:{" "}

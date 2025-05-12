@@ -21,7 +21,6 @@ defmodule ApiCheckerWeb.Router do
   scope "/api", ApiCheckerWeb do
     pipe_through :api
 
-    resources "/endpoints", EndpointController, except: [:new, :edit]
     post "/register", UserController, :register
     post "/login", UserController, :login
   end

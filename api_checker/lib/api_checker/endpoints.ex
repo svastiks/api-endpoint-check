@@ -9,39 +9,36 @@ defmodule ApiChecker.Endpoints do
   alias ApiChecker.Accounts.User
 
   @doc """
-  Returns the list of endpoints.
+  Returns the list of endpoints for a user.
   """
-  def list_endpoints do
-    Repo.all(Endpoint)
-  end
-
-  @doc """
-  Returns the list of active endpoints.
-  """
-  def list_active_endpoints do
-    from(e in Endpoint, where: e.active == true)
+  def list_endpoints(%User{} = user) do
+    from(e in Endpoint, where: e.user_id == ^user.id)
     |> Repo.all()
   end
 
   @doc """
-  Gets a single endpoint.  """
-  def get_endpoint!(id), do: Repo.get!(Endpoint, id)
+  Returns the list of active endpoints for a user.
+  """
+  def list_active_endpoints(%User{} = user) do
+    from(e in Endpoint, where: e.active == true and e.user_id == ^user.id)
+    |> Repo.all()
+  end
 
   @doc """
   Gets a single endpoint.
   Returns nil if the Endpoint does not exist or is not active.
   """
-  def get_endpoint(id) do
-    from(e in Endpoint, where: e.id == ^id and e.active == true)
+  def get_endpoint(%User{} = user, id) do
+    from(e in Endpoint, where: e.id == ^id and e.active == true and e.user_id == ^user.id)
     |> Repo.one()
   end
 
   @doc """
-  Creates a endpoint.
+  Creates a endpoint for a user.
   """
-  def create_endpoint(attrs \\ %{}) do
+  def create_endpoint(%User{} = user, attrs \\ %{}) do
     %Endpoint{}
-    |> Endpoint.changeset(attrs)
+    |> Endpoint.changeset(Map.put(attrs, :user_id, user.id))
     |> Repo.insert()
   end
 

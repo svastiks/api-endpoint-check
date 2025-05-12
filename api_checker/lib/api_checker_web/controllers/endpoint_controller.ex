@@ -10,7 +10,7 @@ defmodule ApiCheckerWeb.EndpointController do
 
   def index(conn, _params) do
     user = conn.assigns.current_user
-    endpoints = Endpoints.list_endpoints()
+    endpoints = Endpoints.list_endpoints(user)
     render(conn, :index, endpoints: endpoints)
   end
 
@@ -22,33 +22,31 @@ defmodule ApiCheckerWeb.EndpointController do
       # Return an internal server error or unauthorized
       send_resp(conn, :internal_server_error, "User not found") |> halt()
     else
-      endpoint_params_with_user = Map.put(endpoint_params, "user_id", user.id)
-      Logger.debug("EndpointController.create: Params passed to context: #{inspect(endpoint_params_with_user)}") # Add logging
+      with {:ok, %Endpoint{} = endpoint} <- Endpoints.create_endpoint(user, endpoint_params) do
+        #Notify the checker supervisor about the new endpoint
+        GenServer.cast(ApiChecker.CheckerSupervisor, {:endpoint_updated, endpoint})
 
-
-    with {:ok, %Endpoint{} = endpoint} <- Endpoints.create_endpoint(endpoint_params_with_user) do
-      #Notify the checker supervisor about the new endpoint
-      GenServer.cast(ApiChecker.CheckerSupervisor, {:endpoint_updated, endpoint})
-
-      conn
-      |> put_status(:created)
-      |> put_resp_header("location", ~p"/api/endpoints/#{endpoint}")
-      |> render(:show, endpoint: endpoint)
+        conn
+        |> put_status(:created)
+        |> put_resp_header("location", ~p"/api/endpoints/#{endpoint}")
+        |> render(:show, endpoint: endpoint)
+      end
     end
-  end
   end
 
   def show(conn, %{"id" => id}) do
-    endpoint = Endpoints.get_endpoint!(id)
+    user = conn.assigns.current_user
+    endpoint = Endpoints.get_endpoint(user, id)
     render(conn, :show, endpoint: endpoint)
   end
 
   def update(conn, %{"id" => id, "endpoint" => endpoint_params}) do
-    endpoint = Endpoints.get_endpoint!(id)
+    user = conn.assigns.current_user
+    endpoint = Endpoints.get_endpoint(user, id)
 
     with {:ok, %Endpoint{} = endpoint} <- Endpoints.update_endpoint(endpoint, endpoint_params) do
       # Notify the checker supervisor about the updated endpoint
-      updated_endpoint = Endpoints.get_endpoint!(id)
+      updated_endpoint = Endpoints.get_endpoint(user, id)
       GenServer.cast(ApiChecker.CheckerSupervisor, {:endpoint_updated, updated_endpoint})
 
       conn
@@ -57,7 +55,9 @@ defmodule ApiCheckerWeb.EndpointController do
   end
 
   def delete(conn, %{"id" => id}) do
-    endpoint = Endpoints.get_endpoint!(id)
+    user = conn.assigns.current_user
+    endpoint = Endpoints.get_endpoint(user, id)
+
     with {:ok, %Endpoint{}} <- Endpoints.delete_endpoint(endpoint) do
       # Notify the checker supervisor about the deleted endpoint
       GenServer.cast(ApiChecker.CheckerSupervisor, {:endpoint_deleted, id})
