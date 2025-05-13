@@ -38,7 +38,7 @@ defmodule ApiChecker.Endpoints do
   """
   def create_endpoint(%User{} = user, attrs \\ %{}) do
     %Endpoint{}
-    |> Endpoint.changeset(Map.put(attrs, :user_id, user.id))
+    |> Endpoint.changeset(Map.put(attrs, "user_id", user.id))
     |> Repo.insert()
   end
 
@@ -85,6 +85,12 @@ defmodule ApiChecker.Endpoints do
   """
   def list_check_results_for_endpoint(endpoint_id, limit \\ 10) do
     import Ecto.Query
+    endpoint_id =
+      case endpoint_id do
+        id when is_binary(id) -> String.to_integer(id)
+        id -> id
+      end
+
     ApiChecker.Repo.all(
       from cr in ApiChecker.Endpoints.CheckResult,
         where: cr.endpoint_id == ^endpoint_id,

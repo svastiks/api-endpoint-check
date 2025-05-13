@@ -20,13 +20,23 @@ defmodule ApiChecker.CheckerSupervisor do
   @impl true
   def init(:ok) do
     # Initial state will hold the timer references for each endpoint
-    {:ok, %{}, {:continue, :schedule_all_endpoints}}
+    users = ApiChecker.Repo.all(ApiChecker.Accounts.User)
+    state = Enum.reduce(users, %{}, fn user, acc ->
+      endpoints = ApiChecker.Endpoints.list_active_endpoints(user)
+      Enum.reduce(endpoints, acc, fn endpoint, acc2 ->
+        schedule_check(endpoint, acc2)
+      end)
+    end)
+    {:ok, state, {:continue, :schedule_all_endpoints}}
   end
 
   @impl true
   def handle_continue(:schedule_all_endpoints, state) do
     Logger.info("Scheduling initial endpoint checks...")
-    endpoints = Endpoints.list_active_endpoints()
+    users = ApiChecker.Repo.all(ApiChecker.Accounts.User)
+    endpoints = Enum.flat_map(users, fn user ->
+      ApiChecker.Endpoints.list_active_endpoints(user)
+    end)
 
     new_state = Enum.reduce(endpoints, state, fn endpoint, acc ->
       schedule_check(endpoint, acc)
@@ -41,21 +51,20 @@ defmodule ApiChecker.CheckerSupervisor do
   @impl true
   def handle_info(:check_new_endpoints, state) do
     Logger.info("Checking for new endpoints...")
-    all_endpoints = Endpoints.list_active_endpoints()
-
+    users = ApiChecker.Repo.all(ApiChecker.Accounts.User)
+    all_endpoints = Enum.flat_map(users, fn user ->
+      ApiChecker.Endpoints.list_active_endpoints(user)
+    end)
     # Find new endpoints that aren't being checked yet
     new_endpoints = Enum.filter(all_endpoints, fn endpoint ->
       not Map.has_key?(state, endpoint.id)
     end)
-
     # Schedule checks for new endpoints
     new_state = Enum.reduce(new_endpoints, state, fn endpoint, acc ->
       schedule_check(endpoint, acc)
     end)
-
     # Schedule next check
     Process.send_after(self(), :check_new_endpoints, @check_interval)
-
     {:noreply, new_state}
   end
 
