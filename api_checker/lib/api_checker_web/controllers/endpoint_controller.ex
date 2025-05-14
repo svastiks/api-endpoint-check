@@ -9,12 +9,14 @@ defmodule ApiCheckerWeb.EndpointController do
   plug :load_and_authorize_endpoint when action in [:show, :update, :delete]
 
   def index(conn, _params) do
+    Logger.info("EndpointController.index called")
     user = conn.assigns.current_user
     endpoints = Endpoints.list_endpoints(user)
     render(conn, :index, endpoints: endpoints)
   end
 
   def create(conn, %{"endpoint" => endpoint_params}) do
+    Logger.info("EndpointController.create called with params: #{inspect(endpoint_params)}")
     user = conn.assigns.current_user
 
     if is_nil(user) do
@@ -35,12 +37,14 @@ defmodule ApiCheckerWeb.EndpointController do
   end
 
   def show(conn, %{"id" => id}) do
+    Logger.info("EndpointController.show called with id: #{id}")
     user = conn.assigns.current_user
     endpoint = Endpoints.get_endpoint(user, id)
     render(conn, :show, endpoint: endpoint)
   end
 
   def update(conn, %{"id" => id, "endpoint" => endpoint_params}) do
+    Logger.info("EndpointController.update called with id: #{id}, params: #{inspect(endpoint_params)}")
     user = conn.assigns.current_user
     endpoint = Endpoints.get_endpoint(user, id)
 
@@ -55,6 +59,7 @@ defmodule ApiCheckerWeb.EndpointController do
   end
 
   def delete(conn, %{"id" => id}) do
+    Logger.info("EndpointController.delete called with id: #{id}")
     user = conn.assigns.current_user
     endpoint = Endpoints.get_endpoint(user, id)
 
